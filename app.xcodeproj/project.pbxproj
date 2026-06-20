@@ -68,6 +68,21 @@
 		DED5E5742C6E03DF007CD802 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED5E5732C6E03DF007CD802 /* Database.swift */; };
 		DED7FA4D2C6A0BAD004300ED /* Home.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DED7FA4C2C6A0BAD004300ED /* Home.storyboard */; };
 		DED7FA4F2C6A0BBC004300ED /* Auth.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DED7FA4E2C6A0BBC004300ED /* Auth.storyboard */; };
+		CE8296012C829600829601 /* ChatTextInputAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296112C829600829601 /* ChatTextInputAttributes.swift */; };
+		CE8296022C829600829602 /* Mention.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296122C829600829602 /* Mention.swift */; };
+		CE8296032C829600829603 /* DraftContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296132C829600829603 /* DraftContent.swift */; };
+		CE8296042C829600829604 /* ChatTextInputState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296142C829600829604 /* ChatTextInputState.swift */; };
+		CE8296052C829600829605 /* EditorEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296152C829600829605 /* EditorEvent.swift */; };
+		CE8296062C829600829606 /* SelectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296162C829600829606 /* SelectionManager.swift */; };
+		CE8296072C829600829607 /* AttributeBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296172C829600829607 /* AttributeBuilder.swift */; };
+		CE8296082C829600829608 /* MentionParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296182C829600829608 /* MentionParser.swift */; };
+		CE8296092C829600829609 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296192C829600829609 /* MarkdownParser.swift */; };
+		CE82960A2C82960082960A /* MentionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961A2C82960082960A /* MentionProcessor.swift */; };
+		CE82960B2C82960082960B /* PasteProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961B2C82960082960B /* PasteProcessor.swift */; };
+		CE82960C2C82960082960C /* EditorProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961C2C82960082960C /* EditorProcessor.swift */; };
+		CE82960D2C82960082960D /* ChatTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961D2C82960082960D /* ChatTextView.swift */; };
+		CE82960E2C82960082960E /* TextInputCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961E2C82960082960E /* TextInputCoordinator.swift */; };
+		CE82960F2C82960082960F /* ChatTextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961F2C82960082960F /* ChatTextInputView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,6 +189,21 @@
 		DF8C69C5F2215087B4B06B6E /* Pods_appTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_appTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E08B082F777D3E6E22726E6B /* Pods-app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-app.debug.xcconfig"; path = "Target Support Files/Pods-app/Pods-app.debug.xcconfig"; sourceTree = "<group>"; };
 		FB5FD5DE1F3EAF6BB3565B2C /* Pods-appTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-appTests.release.xcconfig"; path = "Target Support Files/Pods-appTests/Pods-appTests.release.xcconfig"; sourceTree = "<group>"; };
+		CE8296112C829600829601 /* ChatTextInputAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextInputAttributes.swift; sourceTree = "<group>"; };
+		CE8296122C829600829602 /* Mention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mention.swift; sourceTree = "<group>"; };
+		CE8296132C829600829603 /* DraftContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftContent.swift; sourceTree = "<group>"; };
+		CE8296142C829600829604 /* ChatTextInputState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextInputState.swift; sourceTree = "<group>"; };
+		CE8296152C829600829605 /* EditorEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorEvent.swift; sourceTree = "<group>"; };
+		CE8296162C829600829606 /* SelectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionManager.swift; sourceTree = "<group>"; };
+		CE8296172C829600829607 /* AttributeBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeBuilder.swift; sourceTree = "<group>"; };
+		CE8296182C829600829608 /* MentionParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionParser.swift; sourceTree = "<group>"; };
+		CE8296192C829600829609 /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
+		CE82961A2C82960082960A /* MentionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionProcessor.swift; sourceTree = "<group>"; };
+		CE82961B2C82960082960B /* PasteProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteProcessor.swift; sourceTree = "<group>"; };
+		CE82961C2C82960082960C /* EditorProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorProcessor.swift; sourceTree = "<group>"; };
+		CE82961D2C82960082960D /* ChatTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextView.swift; sourceTree = "<group>"; };
+		CE82961E2C82960082960E /* TextInputCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputCoordinator.swift; sourceTree = "<group>"; };
+		CE82961F2C82960082960F /* ChatTextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextInputView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -429,11 +459,58 @@
 			path = Splash;
 			sourceTree = "<group>";
 		};
+		CE8296212C829600829621 /* Attributes */ = {
+			isa = PBXGroup;
+			children = (
+				CE8296112C829600829601 /* ChatTextInputAttributes.swift */,
+			);
+			path = Attributes;
+			sourceTree = "<group>";
+		};
+		CE8296222C829600829622 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CE8296122C829600829602 /* Mention.swift */,
+				CE8296132C829600829603 /* DraftContent.swift */,
+				CE8296142C829600829604 /* ChatTextInputState.swift */,
+				CE8296152C829600829605 /* EditorEvent.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CE8296232C829600829623 /* Processing */ = {
+			isa = PBXGroup;
+			children = (
+				CE8296162C829600829606 /* SelectionManager.swift */,
+				CE8296172C829600829607 /* AttributeBuilder.swift */,
+				CE8296182C829600829608 /* MentionParser.swift */,
+				CE8296192C829600829609 /* MarkdownParser.swift */,
+				CE82961A2C82960082960A /* MentionProcessor.swift */,
+				CE82961B2C82960082960B /* PasteProcessor.swift */,
+				CE82961C2C82960082960C /* EditorProcessor.swift */,
+			);
+			path = Processing;
+			sourceTree = "<group>";
+		};
+		CE8296202C829600829620 /* ChatTextInput */ = {
+			isa = PBXGroup;
+			children = (
+				CE8296212C829600829621 /* Attributes */,
+				CE8296222C829600829622 /* Models */,
+				CE8296232C829600829623 /* Processing */,
+				CE82961D2C82960082960D /* ChatTextView.swift */,
+				CE82961E2C82960082960E /* TextInputCoordinator.swift */,
+				CE82961F2C82960082960F /* ChatTextInputView.swift */,
+			);
+			path = ChatTextInput;
+			sourceTree = "<group>";
+		};
 		DE7C5C2A2C6620C600E31348 /* Common */ = {
 			isa = PBXGroup;
 			children = (
 				DE7C5C2B2C6620E200E31348 /* ViewModelType.swift */,
 				DE7C5C2F2C66253600E31348 /* ViewController.swift */,
+				CE8296202C829600829620 /* ChatTextInput */,
 			);
 			name = Common;
 			path = Presentation/Common;
@@ -875,6 +952,21 @@
 				1C8B100C2C4FD59900DF6C75 /* AppDelegate.swift in Sources */,
 				DE7D6AF92C6B6D180058A42B /* ActivityIndicator.swift in Sources */,
 				1C8B100E2C4FD59900DF6C75 /* SceneDelegate.swift in Sources */,
+				CE8296012C829600829601 /* ChatTextInputAttributes.swift in Sources */,
+				CE8296022C829600829602 /* Mention.swift in Sources */,
+				CE8296032C829600829603 /* DraftContent.swift in Sources */,
+				CE8296042C829600829604 /* ChatTextInputState.swift in Sources */,
+				CE8296052C829600829605 /* EditorEvent.swift in Sources */,
+				CE8296062C829600829606 /* SelectionManager.swift in Sources */,
+				CE8296072C829600829607 /* AttributeBuilder.swift in Sources */,
+				CE8296082C829600829608 /* MentionParser.swift in Sources */,
+				CE8296092C829600829609 /* MarkdownParser.swift in Sources */,
+				CE82960A2C82960082960A /* MentionProcessor.swift in Sources */,
+				CE82960B2C82960082960B /* PasteProcessor.swift in Sources */,
+				CE82960C2C82960082960C /* EditorProcessor.swift in Sources */,
+				CE82960D2C82960082960D /* ChatTextView.swift in Sources */,
+				CE82960E2C82960082960E /* TextInputCoordinator.swift in Sources */,
+				CE82960F2C82960082960F /* ChatTextInputView.swift in Sources */,
 				DE7C5C2C2C6620E200E31348 /* ViewModelType.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
