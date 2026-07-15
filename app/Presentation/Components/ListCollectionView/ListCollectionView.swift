@@ -222,6 +222,8 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
     private var lastSnapshot: NSDiffableDataSourceSnapshot<Section, Item>?
     private var pendingScrollTarget: ListScrollTarget<Item>?
     private var lastHandledScrollID: UUID?
+    private var isApplyingSnapshot = false
+    private var applyGeneration = 0
 
     init(
         cellProvider: @escaping CellProvider,
@@ -244,39 +246,70 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         self.callbacks = callbacks
     }
 
+    func update(
+        snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
+        animated: Bool,
+        scrollTarget: ListScrollTarget<Item>?
+    ) {
+        queueScrollTarget(scrollTarget)
+        applySnapshot(snapshot, animated: animated)
+    }
+
     func apply(
         snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
         animated: Bool
     ) {
+        applySnapshot(snapshot, animated: animated)
+    }
+
+    // MARK: - Private
+
+    private func queueScrollTarget(_ target: ListScrollTarget<Item>?) {
+        guard let target else { return }
+        guard target.id != lastHandledScrollID else { return }
+        pendingScrollTarget = target
+    }
+
+    private func applySnapshot(
+        snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
+        animated: Bool
+    ) {
+        if let lastSnapshot, Self.isSnapshotEquivalent(lastSnapshot, to: snapshot) {
+            performPendingScrollIfNeeded()
+            return
+        }
+
         invalidateChangedItems(between: lastSnapshot, and: snapshot)
         lastSnapshot = snapshot
+        isApplyingSnapshot = true
 
         dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
             guard let self else { return }
+            self.isApplyingSnapshot = false
             self.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
             self.performPendingScrollIfNeeded()
         }
     }
 
-    func setScrollTarget(_ target: ListScrollTarget<Item>?) {
-        guard let target else { return }
-        guard target.id != lastHandledScrollID else { return }
-
-        pendingScrollTarget = target
-        performPendingScrollIfNeeded()
-    }
-
-    // MARK: - Private
-
     private func performPendingScrollIfNeeded() {
+        guard !isApplyingSnapshot else { return }
         guard let target = pendingScrollTarget else { return }
         guard let indexPath = dataSource.indexPath(for: target.item) else { return }
 
         pendingScrollTarget = nil
         lastHandledScrollID = target.id
 
+        // Layout is stable after apply completion — safe to scroll.
         collectionView.layoutIfNeeded()
         collectionView.scrollToItem(at: indexPath, at: target.position, animated: target.animated)
+    }
+
+    private static func isSnapshotEquivalent(
+        _ lhs: NSDiffableDataSourceSnapshot<Section, Item>,
+        _ rhs: NSDiffableDataSourceSnapshot<Section, Item>
+    ) -> Bool {
+        lhs.sectionIdentifiers == rhs.sectionIdentifiers
+            && lhs.itemIdentifiers == rhs.itemIdentifiers
     }
 
     // MARK: - Data Source
@@ -441,8 +474,11 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
 
     func updateUIView(_ uiView: UICollectionView, context: Context) {
         context.coordinator.updateCallbacks(callbacks)
-        context.coordinator.apply(snapshot: snapshot, animated: animated)
-        context.coordinator.setScrollTarget(scrollTarget)
+        context.coordinator.update(
+            snapshot: snapshot,
+            animated: animated,
+            scrollTarget: scrollTarget
+        )
     }
 }
 
