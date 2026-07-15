@@ -1,28 +1,14 @@
-//
-//  ListCollectionView.swift
-//  app
-//
-//  High-performance generic UICollectionView bridge for SwiftUI.
-//  Uses DiffableDataSource + CompositionalLayout + per-item size cache.
-//
-
 import SwiftUI
 import UIKit
 
 // MARK: - Size Cache Protocol
 
-/// Items that participate in size caching must expose a key representing
-/// every property that affects layout (text, images, expanded state, font, width, …).
-/// Cache is keyed by this string — same cacheKey at any IndexPath shares one size.
 protocol ListSizeCacheable: Equatable {
     var cacheKey: String { get }
 }
 
 // MARK: - Size Cache Manager
 
-/// Caches measured cell sizes keyed by `cacheKey` only.
-/// Same content at different IndexPaths reuses one cached size.
-/// Item → cacheKey mapping is kept only for surgical invalidation on snapshot updates.
 final class ListSizeCacheManager<Item: Hashable> {
 
     private var cache: [String: CGSize] = [:]
@@ -41,12 +27,10 @@ final class ListSizeCacheManager<Item: Hashable> {
         cache[cacheKey] = size
     }
 
-    /// Drops item tracking. Cache entry stays if other items share the same cacheKey.
     func invalidate(item: Item) {
         itemCacheKeys.removeValue(forKey: item)
     }
 
-    /// Removes a cached size when no item references it anymore.
     func removeCacheKeyIfUnused(_ cacheKey: String) {
         guard !itemCacheKeys.values.contains(cacheKey) else { return }
         cache.removeValue(forKey: cacheKey)
@@ -66,7 +50,6 @@ final class ListSizeCacheManager<Item: Hashable> {
 
 // MARK: - Sizing Cell
 
-/// Bridges a cell to the coordinator's size cache without retaining the coordinator.
 struct ListSizingContext {
     let cacheKey: String?
     let readSize: (String) -> CGSize?
@@ -83,8 +66,6 @@ struct ListSizingContext {
     }
 }
 
-/// Base cell for dynamic-height lists.
-/// Subclass this and build content with AutoLayout in `setupContent()`.
 open class ListSizingCell: UICollectionViewCell {
 
     var sizingContext: ListSizingContext?
@@ -97,10 +78,8 @@ open class ListSizingCell: UICollectionViewCell {
         let attributes = layoutAttributes.copy() as! UICollectionViewLayoutAttributes
         let width = resolvedWidth(for: layoutAttributes)
 
-        // Layout not ready yet — skip measure/cache to avoid poisoning the cache.
         guard width > 1 else { return attributes }
 
-        // Reuse cached size when cacheKey is still valid — avoids AutoLayout pass.
         if let context = sizingContext, let cached = context.cachedSize() {
             attributes.size = CGSize(width: width, height: cached.height)
             return attributes
@@ -118,7 +97,6 @@ open class ListSizingCell: UICollectionViewCell {
         return attributes
     }
 
-    /// Prefer layout-provided width; fall back to collection view bounds after layout pass.
     private func resolvedWidth(for layoutAttributes: UICollectionViewLayoutAttributes) -> CGFloat {
         let layoutWidth = layoutAttributes.size.width
         if layoutWidth > 1 { return layoutWidth }
@@ -152,12 +130,10 @@ open class ListSizingCell: UICollectionViewCell {
 
 // MARK: - Scroll Target
 
-/// Request to scroll the list to a specific item.
 struct ListScrollTarget<Item: Hashable & Equatable>: Equatable {
     var item: Item
     var position: UICollectionView.ScrollPosition = .bottom
     var animated: Bool = true
-    /// Changes on each request so scrolling to the same item can be triggered again.
     var id: UUID = UUID()
 
     static func bottom(_ item: Item, animated: Bool = true) -> ListScrollTarget {
@@ -188,7 +164,6 @@ struct ListCollectionViewCallbacks<Item: Hashable> {
 
 enum ListCollectionViewLayoutFactory {
 
-    /// Vertical list — full width, estimated height for self-sizing cells.
     static func makeDefaultLayout() -> UICollectionViewLayout {
         UICollectionViewCompositionalLayout { _, _ in
             let itemSize = NSCollectionLayoutSize(
@@ -306,7 +281,6 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         pendingScrollTarget = nil
         lastHandledScrollID = target.id
 
-        // Layout is stable after apply completion — safe to scroll.
         collectionView.layoutIfNeeded()
         collectionView.scrollToItem(at: indexPath, at: target.position, animated: target.animated)
     }
@@ -327,7 +301,6 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         ) { [weak self] collectionView, indexPath, item in
             guard let self else { return UICollectionViewCell() }
 
-            // Caller owns CellRegistration(s) and dequeues the correct cell type.
             let cell = self.cellProvider(collectionView, indexPath, item)
             self.attachSizing(to: cell, indexPath: indexPath, item: item)
             return cell
@@ -452,7 +425,6 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
     var cellProvider: (UICollectionView, IndexPath, Item) -> UICollectionViewCell
     var callbacks: ListCollectionViewCallbacks<Item> = .init()
     var cacheKeyProvider: ((Item) -> String?)?
-    /// Set from SwiftUI to scroll to a specific item. Use a new `id` to re-trigger.
     var scrollTarget: ListScrollTarget<Item>?
 
     func makeCoordinator() -> ListCollectionViewCoordinator<Section, Item> {
@@ -493,8 +465,6 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
 
 extension ListCollectionView {
 
-    /// Convenience for screens with a single cell type.
-    /// Configuration happens inside `UICollectionView.CellRegistration`.
     init<Cell: ListSizingCell>(
         snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
         animated: Bool = true,
