@@ -216,83 +216,46 @@ enum ChatListCellProvider {
 
 // MARK: - View Model
 
-/// Demonstrates snapshot update strategies for high-frequency chat updates.
 @MainActor
 final class ChatListViewModel: ObservableObject {
 
     @Published private(set) var snapshot = NSDiffableDataSourceSnapshot<ChatListSection, MessageItem>()
 
-    /// Source of truth — mutate this, then publish a diff to `snapshot`.
-    private var messages: [MessageItem] = []
-    private var publishTask: Task<Void, Never>?
-
     init() {
-        messages = Self.makeSampleMessages()
-        publishSnapshot(animated: false)
+        reload(with: Self.makeSampleMessages())
     }
 
-    // MARK: - Incremental update (preferred)
-
-    /// O(diff) — only appends new items, does not rebuild the whole snapshot.
-    func appendRandomMessage() {
-        let newItem = makeRandomMessage(index: messages.count + 1)
-        messages.append(newItem)
-
-        var updated = snapshot
-        updated.appendItems([newItem], toSection: .messages)
-        snapshot = updated
-    }
-
-    /// Batch append — one snapshot publish for many messages (e.g. websocket burst).
-    func ingestBurst(count: Int) {
-        let startIndex = messages.count + 1
-        let newItems = (0..<count).map { offset in
-            makeRandomMessage(index: startIndex + offset)
-        }
-        messages.append(contentsOf: newItems)
-
-        var updated = snapshot
-        updated.appendItems(newItems, toSection: .messages)
-        snapshot = updated
-    }
-
-    // MARK: - Debounced full publish (for content edits on many existing items)
-
-    /// Coalesces rapid full rebuilds — useful when many items change in a short window.
-    func scheduleFullSnapshotPublish(animated: Bool, delay: Duration = .milliseconds(32)) {
-        publishTask?.cancel()
-        publishTask = Task { [weak self] in
-            try? await Task.sleep(for: delay)
-            guard !Task.isCancelled, let self else { return }
-            self.publishSnapshot(animated: animated)
-        }
-    }
-
-    private func publishSnapshot(animated: Bool) {
+    func reload(with messages: [MessageItem], animated: Bool = false) {
         var newSnapshot = NSDiffableDataSourceSnapshot<ChatListSection, MessageItem>()
         newSnapshot.appendSections([.messages])
         newSnapshot.appendItems(messages, toSection: .messages)
         snapshot = newSnapshot
-        _ = animated
     }
 
-    private func makeRandomMessage(index: Int) -> MessageItem {
+    func appendRandomMessage() {
+        var items = snapshot.itemIdentifiers
+        let index = items.count + 1
+
+        let newItem: MessageItem
         switch index % 3 {
         case 0:
-            return .sticker(id: UUID().uuidString, emoji: ["😀", "🎉", "🔥", "👍"].randomElement() ?? "😀")
+            newItem = .sticker(id: UUID().uuidString, emoji: ["😀", "🎉", "🔥", "👍"].randomElement() ?? "😀")
         case 1:
-            return .image(
+            newItem = .image(
                 id: UUID().uuidString,
                 colorHex: ["FF3B30", "34C759", "FF9500", "AF52DE"].randomElement() ?? "007AFF",
                 width: 4,
                 height: 3
             )
         default:
-            return .text(
+            newItem = .text(
                 id: UUID().uuidString,
                 body: "New text message #\(index). Multi-cell ListCollectionView dequeues the correct registration per item."
             )
         }
+
+        items.append(newItem)
+        reload(with: items, animated: true)
     }
 
     private static func makeSampleMessages() -> [MessageItem] {
@@ -332,20 +295,13 @@ struct ChatListExampleView: View {
                 snapshot: viewModel.snapshot,
                 animated: true,
                 cellProvider: ChatListCellProvider.makeProvider(),
-                cacheKeyProvider: { $0.cacheKey },
-                applyPolicy: .coalesced
+                cacheKeyProvider: { $0.cacheKey }
             )
 
             Divider()
 
-            HStack(spacing: 12) {
-                Button("Add 1") {
-                    viewModel.appendRandomMessage()
-                }
-
-                Button("Burst 10") {
-                    viewModel.ingestBurst(count: 10)
-                }
+            Button("Add Message") {
+                viewModel.appendRandomMessage()
             }
             .font(.headline)
             .frame(maxWidth: .infinity)
