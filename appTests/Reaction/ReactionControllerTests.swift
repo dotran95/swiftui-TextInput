@@ -27,27 +27,6 @@ final class ReactionControllerTests: XCTestCase {
         )
     }
 
-    private func collectCommits(
-        from controller: ReactionController,
-        timeout: TimeInterval = 1.0
-    ) -> [OAReaction] {
-        let expectation = expectation(description: "commits")
-        var commits: [OAReaction] = []
-        var expectedCount = 1
-
-        controller.commitPublisher
-            .sink { reaction in
-                commits.append(reaction)
-                if commits.count >= expectedCount {
-                    expectation.fulfill()
-                }
-            }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: timeout)
-        return commits
-    }
-
     private func waitDebounce(_ interval: TimeInterval = 0.12) {
         let exp = expectation(description: "debounce")
         DispatchQueue.global().asyncAfter(deadline: .now() + interval) {
