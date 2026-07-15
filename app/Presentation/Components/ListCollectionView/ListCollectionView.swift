@@ -159,6 +159,18 @@ enum ListCollectionViewLayoutFactory {
     }
 }
 
+// MARK: - Snapshot Apply Policy
+
+/// Controls how often `ListCollectionView` commits snapshots to UIKit.
+enum ListSnapshotApplyPolicy: Equatable {
+    /// Every SwiftUI update applies immediately.
+    case immediate
+    /// Merges burst updates on the same run loop — only the latest snapshot is applied.
+    case coalesced
+    /// Applies once after updates pause for `interval` seconds.
+    case debounced(TimeInterval)
+}
+
 // MARK: - Coordinator
 
 final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NSObject {
@@ -167,6 +179,7 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
 
     private let cellProvider: CellProvider
     private let cacheKeyProvider: (Item) -> String?
+    private let applyPolicy: ListSnapshotApplyPolicy
 
     private(set) var collectionView: UICollectionView!
     private(set) var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
@@ -175,12 +188,20 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
     private var callbacks = ListCollectionViewCallbacks<Item>()
     private var lastSnapshot: NSDiffableDataSourceSnapshot<Section, Item>?
 
+    private var isApplying = false
+    private var pendingSnapshot: NSDiffableDataSourceSnapshot<Section, Item>?
+    private var pendingAnimated = false
+    private var isCoalesceScheduled = false
+    private var debounceWorkItem: DispatchWorkItem?
+
     init(
         cellProvider: @escaping CellProvider,
-        cacheKeyProvider: ((Item) -> String?)?
+        cacheKeyProvider: ((Item) -> String?)?,
+        applyPolicy: ListSnapshotApplyPolicy = .immediate
     ) {
         self.cellProvider = cellProvider
         self.cacheKeyProvider = cacheKeyProvider
+        self.applyPolicy = applyPolicy
         super.init()
     }
 
@@ -200,15 +221,104 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
         animated: Bool
     ) {
-        invalidateChangedItems(between: lastSnapshot, and: snapshot)
-        lastSnapshot = snapshot
+        switch applyPolicy {
+        case .immediate:
+            performApply(snapshot: snapshot, animated: animated)
 
-        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            self?.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
+        case .coalesced:
+            pendingSnapshot = snapshot
+            if animated { pendingAnimated = true }
+
+            // First apply must be synchronous so the list is not empty on appear.
+            if lastSnapshot == nil {
+                pendingSnapshot = nil
+                pendingAnimated = false
+                performApply(snapshot: snapshot, animated: animated)
+                return
+            }
+
+            scheduleCoalescedApply()
+
+        case .debounced(let interval):
+            pendingSnapshot = snapshot
+            if animated { pendingAnimated = true }
+            scheduleDebouncedApply(interval: interval)
         }
     }
 
     // MARK: - Private
+
+    private func scheduleCoalescedApply() {
+        guard !isCoalesceScheduled else { return }
+        isCoalesceScheduled = true
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isCoalesceScheduled = false
+            guard let snapshot = self.pendingSnapshot else { return }
+
+            self.pendingSnapshot = nil
+            let animated = self.pendingAnimated
+            self.pendingAnimated = false
+            self.performApply(snapshot: snapshot, animated: animated)
+        }
+    }
+
+    private func scheduleDebouncedApply(interval: TimeInterval) {
+        debounceWorkItem?.cancel()
+
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let snapshot = self.pendingSnapshot else { return }
+            self.pendingSnapshot = nil
+            let animated = self.pendingAnimated
+            self.pendingAnimated = false
+            self.performApply(snapshot: snapshot, animated: animated)
+        }
+        debounceWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: work)
+    }
+
+    private func performApply(
+        snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
+        animated: Bool
+    ) {
+        if isApplying {
+            pendingSnapshot = snapshot
+            if animated { pendingAnimated = true }
+            return
+        }
+
+        if let lastSnapshot, Self.isEquivalent(lastSnapshot, to: snapshot) {
+            return
+        }
+
+        isApplying = true
+        invalidateChangedItems(between: lastSnapshot, and: snapshot)
+        lastSnapshot = snapshot
+
+        dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+            guard let self else { return }
+            self.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
+            self.isApplying = false
+
+            if let pending = self.pendingSnapshot {
+                self.pendingSnapshot = nil
+                let pendingAnimated = self.pendingAnimated
+                self.pendingAnimated = false
+                self.performApply(snapshot: pending, animated: pendingAnimated)
+            }
+        }
+    }
+
+    private static func isEquivalent(
+        _ lhs: NSDiffableDataSourceSnapshot<Section, Item>,
+        _ rhs: NSDiffableDataSourceSnapshot<Section, Item>
+    ) -> Bool {
+        lhs.sectionIdentifiers == rhs.sectionIdentifiers
+            && lhs.itemIdentifiers == rhs.itemIdentifiers
+    }
+
+    // MARK: - Data Source
 
     private func makeDataSource() {
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(
@@ -275,6 +385,7 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
     }
 
     deinit {
+        debounceWorkItem?.cancel()
         collectionView?.delegate = nil
         collectionView?.prefetchDataSource = nil
     }
@@ -344,11 +455,14 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
     var cellProvider: (UICollectionView, IndexPath, Item) -> UICollectionViewCell
     var callbacks: ListCollectionViewCallbacks<Item> = .init()
     var cacheKeyProvider: ((Item) -> String?)?
+    /// `.coalesced` is recommended for chat/feed with burst updates.
+    var applyPolicy: ListSnapshotApplyPolicy = .immediate
 
     func makeCoordinator() -> ListCollectionViewCoordinator<Section, Item> {
         ListCollectionViewCoordinator(
             cellProvider: cellProvider,
-            cacheKeyProvider: cacheKeyProvider
+            cacheKeyProvider: cacheKeyProvider,
+            applyPolicy: applyPolicy
         )
     }
 
@@ -381,7 +495,8 @@ extension ListCollectionView {
         layoutProvider: ((UICollectionView) -> UICollectionViewLayout)? = nil,
         cellRegistration: UICollectionView.CellRegistration<Cell, Item>,
         callbacks: ListCollectionViewCallbacks<Item> = .init(),
-        cacheKeyProvider: ((Item) -> String?)? = nil
+        cacheKeyProvider: ((Item) -> String?)? = nil,
+        applyPolicy: ListSnapshotApplyPolicy = .immediate
     ) {
         self.snapshot = snapshot
         self.animated = animated
@@ -395,5 +510,6 @@ extension ListCollectionView {
         }
         self.callbacks = callbacks
         self.cacheKeyProvider = cacheKeyProvider
+        self.applyPolicy = applyPolicy
     }
 }
