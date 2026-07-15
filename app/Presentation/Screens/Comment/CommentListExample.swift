@@ -238,8 +238,7 @@ final class CommentListExampleViewController: UIHostingController<CommentListExa
         super.init(rootView: CommentListExampleView())
     }
 
-    @MainActor
-    dynamic required init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         super.init(coder: coder, rootView: CommentListExampleView())
     }
 }

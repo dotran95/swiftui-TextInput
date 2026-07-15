@@ -95,10 +95,7 @@ open class ListSizingCell: UICollectionViewCell {
         _ layoutAttributes: UICollectionViewLayoutAttributes
     ) -> UICollectionViewLayoutAttributes {
         let attributes = layoutAttributes.copy() as! UICollectionViewLayoutAttributes
-        let width = Self.resolvedWidth(
-            layoutAttributes: layoutAttributes,
-            collectionView: collectionView
-        )
+        let width = resolvedWidth(for: layoutAttributes)
 
         // Layout not ready yet — skip measure/cache to avoid poisoning the cache.
         guard width > 1 else { return attributes }
@@ -156,7 +153,7 @@ open class ListSizingCell: UICollectionViewCell {
 // MARK: - Scroll Target
 
 /// Request to scroll the list to a specific item.
-struct ListScrollTarget<Item: Hashable>: Equatable {
+struct ListScrollTarget<Item: Hashable & Equatable>: Equatable {
     var item: Item
     var position: UICollectionView.ScrollPosition = .bottom
     var animated: Bool = true

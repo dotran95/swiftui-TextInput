@@ -174,7 +174,7 @@ final class ImageMessageCell: ListSizingCell {
     }
 
     func configure(colorHex: String, width: CGFloat, height: CGFloat) {
-        photoView.backgroundColor = UIColor(hex: colorHex)
+        photoView.backgroundColor = UIColor(hex: colorHex) ?? .systemGray4
         aspectConstraint?.isActive = false
         aspectConstraint = photoView.heightAnchor.constraint(
             equalTo: photoView.widthAnchor,
@@ -220,6 +220,14 @@ enum ChatListCellProvider {
 final class ChatListViewModel: ObservableObject {
 
     @Published private(set) var snapshot = NSDiffableDataSourceSnapshot<ChatListSection, MessageItem>()
+
+    var firstMessage: MessageItem? {
+        snapshot.itemIdentifiers.first
+    }
+
+    var lastMessage: MessageItem? {
+        snapshot.itemIdentifiers.last
+    }
 
     init() {
         reload(with: Self.makeSampleMessages())
@@ -320,7 +328,8 @@ struct ChatListExampleView: View {
                     scrollTarget = .bottom(last)
                 }
             }
-            .font(.subheadline.weight(.semibold))
+            .font(.subheadline)
+            .fontWeight(.semibold)
             .frame(maxWidth: .infinity)
             .padding()
         }
@@ -337,8 +346,7 @@ final class ChatListExampleViewController: UIHostingController<ChatListExampleVi
         super.init(rootView: ChatListExampleView())
     }
 
-    @MainActor
-    dynamic required init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         super.init(coder: coder, rootView: ChatListExampleView())
     }
 }
