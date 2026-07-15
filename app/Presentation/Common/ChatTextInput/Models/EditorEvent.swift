@@ -13,4 +13,6 @@ enum EditorEvent {
     case selectionChanged(NSRange)
     case paste(NSAttributedString)
     case insertMention(Mention)
+    /// IME committed text or IME-language typing synced from UITextView.
+    case syncFromTextView(attributedText: NSAttributedString, selection: NSRange)
 }

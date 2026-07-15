@@ -51,11 +51,16 @@ struct ChatTextInputView: UIViewRepresentable {
         coordinator.beginRendering()
         defer { coordinator.endRendering() }
 
-        if !textView.attributedText.isEqual(to: state.attributedText) {
+        // Never overwrite UITextView content during IME marked-text composition.
+        let skipContentSync = coordinator.shouldSkipRenderSync(for: textView)
+
+        if !skipContentSync,
+           !textView.attributedText.isEqual(to: state.attributedText) {
             textView.attributedText = state.attributedText
         }
 
-        if textView.selectedRange != state.selectionRange {
+        if !skipContentSync,
+           textView.selectedRange != state.selectionRange {
             textView.selectedRange = state.selectionRange
         }
 

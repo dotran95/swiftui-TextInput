@@ -33,6 +33,12 @@ final class EditorProcessor {
             return handlePaste(currentState: currentState, content: content)
         case .insertMention(let mention):
             return handleInsertMention(currentState: currentState, mention: mention)
+        case .syncFromTextView(let attributedText, let selection):
+            return handleSyncFromTextView(
+                currentState: currentState,
+                attributedText: attributedText,
+                selection: selection
+            )
         }
     }
 
@@ -171,6 +177,38 @@ final class EditorProcessor {
         return ChatTextInputState(
             attributedText: mutable,
             selectionRange: SelectionManager.clamp(newSelection, to: mutable.length)
+        )
+    }
+
+  // MARK: - IME sync
+
+    /// Applies committed IME text from UITextView back into state.
+    ///
+    /// Used for Vietnamese / CJK / Korean keyboards where `shouldChangeTextIn`
+    /// must return `true` so marked-text composition can complete.
+    private func handleSyncFromTextView(
+        currentState: ChatTextInputState?,
+        attributedText: NSAttributedString,
+        selection: NSRange
+    ) -> ChatTextInputState {
+        let normalized = pasteProcessor.normalize(attributedText)
+        let clampedSelection = SelectionManager.clamp(selection, to: normalized.length)
+
+        guard let currentState else {
+            return ChatTextInputState(
+                attributedText: normalized,
+                selectionRange: clampedSelection
+            )
+        }
+
+        if currentState.attributedText.isEqual(to: normalized),
+           SelectionManager.isEqual(currentState.selectionRange, clampedSelection) {
+            return currentState
+        }
+
+        return ChatTextInputState(
+            attributedText: normalized,
+            selectionRange: clampedSelection
         )
     }
 

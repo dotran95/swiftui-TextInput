@@ -19,6 +19,9 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
     /// `updateUIView` → `textViewDidChangeSelection` → `process` → `updateUIView`
     private(set) var isRendering = false
 
+    /// `true` while marked text is active or until the last IME commit is synced.
+    private(set) var isIMEComposing = false
+
     init(state: Binding<ChatTextInputState>) {
         _state = state
     }
@@ -37,6 +40,10 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
         }
     }
 
+    func shouldSkipRenderSync(for textView: UITextView) -> Bool {
+        isIMEComposing || IMECompositionHandler.isActivelyComposing(textView)
+    }
+
   // MARK: - UITextViewDelegate
 
     func textView(
@@ -44,8 +51,12 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
         shouldChangeTextIn range: NSRange,
         replacementText text: String
     ) -> Bool {
-        // Allow UIKit to proceed while we are pushing rendered state back in.
         guard !isRendering else { return true }
+
+        // IME keyboards (Vietnamese, CJK, Korean) require UIKit to own text mutation.
+        if IMECompositionHandler.shouldDelegateToSystemIME(textView, isComposing: isIMEComposing) {
+            return true
+        }
 
         let event: EditorEvent
         if text.isEmpty {
@@ -63,6 +74,21 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
         return false
     }
 
+    func textViewDidChange(_ textView: UITextView) {
+        guard !isRendering else { return }
+
+        if IMECompositionHandler.isActivelyComposing(textView) {
+            // Marked text is visible — only mirror selection, do not overwrite composition.
+            isIMEComposing = true
+            apply(.selectionChanged(textView.selectedRange))
+            return
+        }
+
+        isIMEComposing = false
+        let content = textView.attributedText ?? NSAttributedString()
+        apply(.syncFromTextView(attributedText: content, selection: textView.selectedRange))
+    }
+
     func textViewDidChangeSelection(_ textView: UITextView) {
         guard !isRendering else { return }
 
@@ -76,6 +102,7 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
 
     private func handlePaste(_ content: NSAttributedString) {
         guard !isRendering else { return }
+        isIMEComposing = false
         apply(.paste(content))
     }
 

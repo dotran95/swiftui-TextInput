@@ -83,6 +83,7 @@
 		CE82960D2C82960082960D /* ChatTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961D2C82960082960D /* ChatTextView.swift */; };
 		CE82960E2C82960082960E /* TextInputCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961E2C82960082960E /* TextInputCoordinator.swift */; };
 		CE82960F2C82960082960F /* ChatTextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82961F2C82960082960F /* ChatTextInputView.swift */; };
+		CE8296102C829600829610 /* IMECompositionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8296242C829600829624 /* IMECompositionHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -204,6 +205,7 @@
 		CE82961D2C82960082960D /* ChatTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextView.swift; sourceTree = "<group>"; };
 		CE82961E2C82960082960E /* TextInputCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputCoordinator.swift; sourceTree = "<group>"; };
 		CE82961F2C82960082960F /* ChatTextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTextInputView.swift; sourceTree = "<group>"; };
+		CE8296242C829600829624 /* IMECompositionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMECompositionHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -488,6 +490,7 @@
 				CE82961A2C82960082960A /* MentionProcessor.swift */,
 				CE82961B2C82960082960B /* PasteProcessor.swift */,
 				CE82961C2C82960082960C /* EditorProcessor.swift */,
+				CE8296242C829600829624 /* IMECompositionHandler.swift */,
 			);
 			path = Processing;
 			sourceTree = "<group>";
@@ -967,6 +970,7 @@
 				CE82960D2C82960082960D /* ChatTextView.swift in Sources */,
 				CE82960E2C82960082960E /* TextInputCoordinator.swift in Sources */,
 				CE82960F2C82960082960F /* ChatTextInputView.swift in Sources */,
+				CE8296102C829600829610 /* IMECompositionHandler.swift in Sources */,
 				DE7C5C2C2C6620E200E31348 /* ViewModelType.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

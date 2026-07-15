@@ -92,6 +92,7 @@ Do **not** store mentions, markdown, tokens, or parser output in state. Those be
 | `MarkdownParser` | Inline + draft markdown |
 | `AttributeBuilder` | Styling and typing attributes |
 | `SelectionManager` | Cursor / selection math |
+| `IMECompositionHandler` | Vietnamese / CJK / Korean IME detection |
 
 ## Mention attribute
 
@@ -255,6 +256,41 @@ updateUIView → beginRendering() → set attributedText + selectedRange + typin
 | User interaction | `false` | emits `EditorEvent` normally |
 
 `typingAttributes` is updated from cursor position so characters typed after a mention do **not** inherit `mentionId`.
+
+## Vietnamese & IME input
+
+Returning `false` from `shouldChangeTextIn` blocks **marked-text composition** (`markedTextRange`), which breaks Vietnamese Telex/VNI and other IME keyboards.
+
+### Hybrid typing strategy
+
+| Condition | `shouldChangeTextIn` | Sync path |
+|-----------|---------------------|-----------|
+| IME language (`vi`, `zh`, `ja`, `ko`) or active marked text | return `true` — UIKit owns mutation | `textViewDidChange` → `.syncFromTextView` |
+| Latin / direct input | return `false` — processor owns mutation | `.textInput` / `.deleteBackward` |
+
+### IME flow
+
+```
+User types (Vietnamese keyboard)
+    ↓
+shouldChangeTextIn → return true
+    ↓
+UITextView marked text (e.g. "uw" composing → "ư")
+    ↓
+textViewDidChange (markedTextRange != nil) → update selection only
+    ↓
+User commits composition (markedTextRange == nil)
+    ↓
+textViewDidChange → .syncFromTextView → EditorProcessor → state
+    ↓
+updateUIView skips overwrite while markedTextRange is active
+```
+
+`IMECompositionHandler` detects:
+
+- `textView.markedTextRange != nil` — active composition
+- `textInputMode.primaryLanguage` prefix `vi` / `zh` / `ja` / `ko`
+- `isIMEComposing` flag until the committed sync completes
 
 ## Markdown
 
