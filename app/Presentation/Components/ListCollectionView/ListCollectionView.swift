@@ -68,7 +68,6 @@ final class ListSizeCacheManager<Item: Hashable> {
 
 /// Bridges a cell to the coordinator's size cache without retaining the coordinator.
 struct ListSizingContext {
-    let proposedWidth: CGFloat
     let cacheKey: String?
     let readSize: (String) -> CGSize?
     let writeSize: (CGSize, String) -> Void
@@ -78,8 +77,8 @@ struct ListSizingContext {
         return readSize(cacheKey)
     }
 
-    func store(size: CGSize) {
-        guard let cacheKey else { return }
+    func store(size: CGSize, width: CGFloat) {
+        guard let cacheKey, width > 1 else { return }
         writeSize(size, cacheKey)
     }
 }
@@ -96,7 +95,13 @@ open class ListSizingCell: UICollectionViewCell {
         _ layoutAttributes: UICollectionViewLayoutAttributes
     ) -> UICollectionViewLayoutAttributes {
         let attributes = layoutAttributes.copy() as! UICollectionViewLayoutAttributes
-        let width = sizingContext?.proposedWidth ?? layoutAttributes.size.width
+        let width = Self.resolvedWidth(
+            layoutAttributes: layoutAttributes,
+            collectionView: collectionView
+        )
+
+        // Layout not ready yet — skip measure/cache to avoid poisoning the cache.
+        guard width > 1 else { return attributes }
 
         // Reuse cached size when cacheKey is still valid — avoids AutoLayout pass.
         if let context = sizingContext, let cached = context.cachedSize() {
@@ -112,8 +117,26 @@ open class ListSizingCell: UICollectionViewCell {
         )
 
         attributes.size = measured
-        sizingContext?.store(size: measured)
+        sizingContext?.store(size: measured, width: width)
         return attributes
+    }
+
+    /// Prefer layout-provided width; fall back to collection view bounds after layout pass.
+    private static func resolvedWidth(
+        layoutAttributes: UICollectionViewLayoutAttributes,
+        collectionView: UICollectionView?
+    ) -> CGFloat {
+        let layoutWidth = layoutAttributes.size.width
+        if layoutWidth > 1 { return layoutWidth }
+
+        guard let collectionView else { return layoutWidth }
+
+        let boundsWidth = collectionView.bounds.width
+            - collectionView.adjustedContentInset.left
+            - collectionView.adjustedContentInset.right
+        if boundsWidth > 1 { return boundsWidth }
+
+        return layoutWidth
     }
 
     open override func prepareForReuse() {
@@ -226,14 +249,9 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
     private func attachSizing(to cell: UICollectionViewCell, indexPath: IndexPath, item: Item) {
         guard let sizingCell = cell as? ListSizingCell else { return }
 
-        let width = collectionView.bounds.width
-            - collectionView.adjustedContentInset.left
-            - collectionView.adjustedContentInset.right
-
         let cacheKey = cacheKeyProvider?(item)
 
         sizingCell.sizingContext = ListSizingContext(
-            proposedWidth: max(width, 1),
             cacheKey: cacheKey,
             readSize: { [weak self] key in
                 self?.sizeCache.size(for: key)
@@ -250,9 +268,11 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
     ) {
         guard let oldSnapshot else { return }
 
-        let newItems = Set(newSnapshot.itemIdentifiers)
+        let oldItemsSet = Set(oldSnapshot.itemIdentifiers)
+        let newItemsSet = Set(newSnapshot.itemIdentifiers)
+        let deletedItems = oldItemsSet.subtracting(newItemsSet)
 
-        for item in oldSnapshot.itemIdentifiers where !newItems.contains(item) {
+        for item in deletedItems {
             let oldKey = sizeCache.cacheKey(for: item)
             sizeCache.invalidate(item: item)
             if let oldKey {
@@ -262,8 +282,8 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
 
         guard let cacheKeyProvider else { return }
 
-        for item in newSnapshot.itemIdentifiers {
-            guard oldSnapshot.indexOfItem(item) != nil else { continue }
+        let persistedItems = oldItemsSet.intersection(newItemsSet)
+        for item in persistedItems {
             let newKey = cacheKeyProvider(item)
             if let newKey,
                let oldKey = sizeCache.cacheKey(for: item),
@@ -353,9 +373,15 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
     }
 
     func makeUIView(context: Context) -> UICollectionView {
-        let layout = layoutProvider?(UICollectionView())
-            ?? ListCollectionViewLayoutFactory.makeDefaultLayout()
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        let collectionView = UICollectionView(
+            frame: .zero,
+            collectionViewLayout: ListCollectionViewLayoutFactory.makeDefaultLayout()
+        )
+
+        if let layoutProvider {
+            collectionView.collectionViewLayout = layoutProvider(collectionView)
+        }
+
         collectionView.keyboardDismissMode = .onDrag
         collectionView.alwaysBounceVertical = true
         context.coordinator.attach(to: collectionView)
