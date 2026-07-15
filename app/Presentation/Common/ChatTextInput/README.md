@@ -156,7 +156,7 @@ selectionRange = NSRange(location: 6, length: 0)
 
 `SelectionManager.afterReplacement(replacedRange:replacementLength:)` computes `location + replacementLength`.
 
-Emoji from the iOS keyboard flows through the same path as regular characters.
+Emoji from the iOS keyboard flows through the direct-input path. Vietnamese Telex/VNI uses the IME path (see [Vietnamese & IME input](#vietnamese--ime-input)).
 
 ---
 
