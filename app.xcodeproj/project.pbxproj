@@ -68,6 +68,12 @@
 		DED5E5742C6E03DF007CD802 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED5E5732C6E03DF007CD802 /* Database.swift */; };
 		DED7FA4D2C6A0BAD004300ED /* Home.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DED7FA4C2C6A0BAD004300ED /* Home.storyboard */; };
 		DED7FA4F2C6A0BBC004300ED /* Auth.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DED7FA4E2C6A0BBC004300ED /* Auth.storyboard */; };
+		AE1C8B012C700001000A828A /* OAReaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B112C700001000A828A /* OAReaction.swift */; };
+		AE1C8B022C700001000A828A /* ReactionStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B122C700001000A828A /* ReactionStateMachine.swift */; };
+		AE1C8B032C700001000A828A /* ReactionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B132C700001000A828A /* ReactionController.swift */; };
+		AE1C8B042C700001000A828A /* LikeButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B142C700001000A828A /* LikeButton.swift */; };
+		AE1C8B052C700001000A828A /* ReactionStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B152C700001000A828A /* ReactionStateMachineTests.swift */; };
+		AE1C8B062C700001000A828A /* ReactionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1C8B162C700001000A828A /* ReactionControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,6 +180,12 @@
 		DF8C69C5F2215087B4B06B6E /* Pods_appTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_appTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E08B082F777D3E6E22726E6B /* Pods-app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-app.debug.xcconfig"; path = "Target Support Files/Pods-app/Pods-app.debug.xcconfig"; sourceTree = "<group>"; };
 		FB5FD5DE1F3EAF6BB3565B2C /* Pods-appTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-appTests.release.xcconfig"; path = "Target Support Files/Pods-appTests/Pods-appTests.release.xcconfig"; sourceTree = "<group>"; };
+		AE1C8B112C700001000A828A /* OAReaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAReaction.swift; sourceTree = "<group>"; };
+		AE1C8B122C700001000A828A /* ReactionStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionStateMachine.swift; sourceTree = "<group>"; };
+		AE1C8B132C700001000A828A /* ReactionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionController.swift; sourceTree = "<group>"; };
+		AE1C8B142C700001000A828A /* LikeButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeButton.swift; sourceTree = "<group>"; };
+		AE1C8B152C700001000A828A /* ReactionStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionStateMachineTests.swift; sourceTree = "<group>"; };
+		AE1C8B162C700001000A828A /* ReactionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReactionControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,6 +251,7 @@
 				DE7A03392C69EE320029E1D7 /* Manager */,
 				DE7D6AF32C6B47210058A42B /* Rx */,
 				DE7D6AFE2C6B75770058A42B /* Extensions */,
+				AE1C8B172C700001000A828A /* Reaction */,
 				1C8B103D2C4FD6BA00DF6C75 /* Resources */,
 			);
 			path = app;
@@ -248,8 +261,29 @@
 			isa = PBXGroup;
 			children = (
 				1C8B10222C4FD59B00DF6C75 /* appTests.swift */,
+				AE1C8B182C700001000A828A /* Reaction */,
 			);
 			path = appTests;
+			sourceTree = "<group>";
+		};
+		AE1C8B172C700001000A828A /* Reaction */ = {
+			isa = PBXGroup;
+			children = (
+				AE1C8B112C700001000A828A /* OAReaction.swift */,
+				AE1C8B122C700001000A828A /* ReactionStateMachine.swift */,
+				AE1C8B132C700001000A828A /* ReactionController.swift */,
+				AE1C8B142C700001000A828A /* LikeButton.swift */,
+			);
+			path = Reaction;
+			sourceTree = "<group>";
+		};
+		AE1C8B182C700001000A828A /* Reaction */ = {
+			isa = PBXGroup;
+			children = (
+				AE1C8B152C700001000A828A /* ReactionStateMachineTests.swift */,
+				AE1C8B162C700001000A828A /* ReactionControllerTests.swift */,
+			);
+			path = Reaction;
 			sourceTree = "<group>";
 		};
 		1C8B102B2C4FD59B00DF6C75 /* appUITests */ = {
@@ -876,6 +910,10 @@
 				DE7D6AF92C6B6D180058A42B /* ActivityIndicator.swift in Sources */,
 				1C8B100E2C4FD59900DF6C75 /* SceneDelegate.swift in Sources */,
 				DE7C5C2C2C6620E200E31348 /* ViewModelType.swift in Sources */,
+				AE1C8B012C700001000A828A /* OAReaction.swift in Sources */,
+				AE1C8B022C700001000A828A /* ReactionStateMachine.swift in Sources */,
+				AE1C8B032C700001000A828A /* ReactionController.swift in Sources */,
+				AE1C8B042C700001000A828A /* LikeButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -884,6 +922,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C8B10232C4FD59B00DF6C75 /* appTests.swift in Sources */,
+				AE1C8B052C700001000A828A /* ReactionStateMachineTests.swift in Sources */,
+				AE1C8B062C700001000A828A /* ReactionControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
