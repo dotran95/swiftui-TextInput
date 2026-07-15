@@ -134,15 +134,27 @@ selectionRange = NSRange(location: 11, length: 0)
 
 ### 2. Typing
 
+Two paths:
+
+**Insert / transform** (all characters, emoji, Vietnamese Telex/VNI):
+
 ```
-shouldChangeTextIn → .textInput(range, replacement) → EditorProcessor → state → render
+shouldChangeTextIn → return true → UITextView mutates → textViewDidChange → .syncFromTextView
 ```
 
+**Delete** (backspace / cut):
+
+```
+shouldChangeTextIn → return false → .deleteBackward → EditorProcessor → render
+```
+
+Insert steps:
+
 1. User types → `shouldChangeTextIn` receives `range` and replacement text.
-2. Coordinator builds `NSAttributedString` using `typingAttributes` at the cursor.
-3. `AttributeBuilder.sanitizeTypingReplacement` strips `mentionId` from typed input so new characters never become fake mentions.
-4. `EditorProcessor` replaces the range in `attributedText`.
-5. Coordinator returns `false` so `UITextView` does not mutate text itself; the new state is rendered in `updateUIView`.
+2. Coordinator sets `typingAttributes` (strips `mentionId` inheritance) and returns `true`.
+3. UITextView applies the edit — including Vietnamese in-place transforms (`a` + `s` → `á`).
+4. `textViewDidChange` fires → `.syncFromTextView` → `EditorProcessor` normalizes → state updates.
+5. `updateUIView` renders the new state (skips overwrite only when CJK `markedTextRange` is active).
 
 **Cursor**
 

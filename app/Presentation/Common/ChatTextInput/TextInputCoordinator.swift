@@ -19,9 +19,6 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
     /// `updateUIView` → `textViewDidChangeSelection` → `process` → `updateUIView`
     private(set) var isRendering = false
 
-    /// `true` while marked text is active or until the last IME commit is synced.
-    private(set) var isIMEComposing = false
-
     init(state: Binding<ChatTextInputState>) {
         _state = state
     }
@@ -41,7 +38,7 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
     }
 
     func shouldSkipRenderSync(for textView: UITextView) -> Bool {
-        isIMEComposing || IMECompositionHandler.isActivelyComposing(textView)
+        IMECompositionHandler.isActivelyComposing(textView)
     }
 
   // MARK: - UITextViewDelegate
@@ -53,38 +50,33 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
     ) -> Bool {
         guard !isRendering else { return true }
 
-        // IME keyboards (Vietnamese, CJK, Korean) require UIKit to own text mutation.
-        if IMECompositionHandler.shouldDelegateToSystemIME(textView, isComposing: isIMEComposing) {
-            return true
-        }
-
-        let event: EditorEvent
         if text.isEmpty {
-            event = .deleteBackward(range: range)
-        } else {
-            let attributes = attributeBuilder.typingAttributes(
-                at: range.location,
-                in: state.attributedText
-            )
-            let replacement = NSAttributedString(string: text, attributes: attributes)
-            event = .textInput(range: range, replacement: replacement)
+            // Delete: processor handles atomic mention removal.
+            apply(.deleteBackward(range: range))
+            return false
         }
 
-        apply(event)
-        return false
+        // Insert / transform: UITextView must own mutation.
+        //
+        // Vietnamese Telex/VNI transforms existing characters in-place
+        // (markedTextRange stays nil). Returning false blocks that transform chain.
+        let sourceText = textView.attributedText ?? state.attributedText
+        textView.typingAttributes = attributeBuilder.typingAttributes(
+            at: range.location,
+            in: sourceText
+        )
+        return true
     }
 
     func textViewDidChange(_ textView: UITextView) {
         guard !isRendering else { return }
 
+        // CJK only: marked text is visible — mirror selection until commit.
         if IMECompositionHandler.isActivelyComposing(textView) {
-            // Marked text is visible — only mirror selection, do not overwrite composition.
-            isIMEComposing = true
             apply(.selectionChanged(textView.selectedRange))
             return
         }
 
-        isIMEComposing = false
         let content = textView.attributedText ?? NSAttributedString()
         apply(.syncFromTextView(attributedText: content, selection: textView.selectedRange))
     }
@@ -102,7 +94,6 @@ final class TextInputCoordinator: NSObject, UITextViewDelegate {
 
     private func handlePaste(_ content: NSAttributedString) {
         guard !isRendering else { return }
-        isIMEComposing = false
         apply(.paste(content))
     }
 
