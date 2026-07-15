@@ -12,73 +12,55 @@ import UIKit
 // MARK: - Size Cache Protocol
 
 /// Items that participate in size caching must expose a key representing
-/// every property that affects layout (text, images, expanded state, font, …).
+/// every property that affects layout (text, images, expanded state, font, width, …).
+/// Cache is keyed by this string — same cacheKey at any IndexPath shares one size.
 protocol ListSizeCacheable: Equatable {
     var cacheKey: String { get }
 }
 
 // MARK: - Size Cache Manager
 
-/// Caches measured cell sizes keyed by `IndexPath` for fast layout lookups.
-/// Each entry also stores the item identity and cacheKey so snapshot updates
-/// can surgically invalidate only changed items — never the full cache.
+/// Caches measured cell sizes keyed by `cacheKey` only.
+/// Same content at different IndexPaths reuses one cached size.
+/// Item → cacheKey mapping is kept only for surgical invalidation on snapshot updates.
 final class ListSizeCacheManager<Item: Hashable> {
 
-    private struct Entry {
-        let size: CGSize
-        let cacheKey: String
-        let item: Item
-    }
-
-    private var cache: [IndexPath: Entry] = [:]
+    private var cache: [String: CGSize] = [:]
     private var itemCacheKeys: [Item: String] = [:]
 
-    func size(for indexPath: IndexPath) -> CGSize? {
-        cache[indexPath]?.size
-    }
-
-    func cacheKey(for indexPath: IndexPath) -> String? {
-        cache[indexPath]?.cacheKey
+    func size(for cacheKey: String) -> CGSize? {
+        cache[cacheKey]
     }
 
     func cacheKey(for item: Item) -> String? {
         itemCacheKeys[item]
     }
 
-    func store(size: CGSize, cacheKey: String, item: Item, at indexPath: IndexPath) {
-        cache[indexPath] = Entry(size: size, cacheKey: cacheKey, item: item)
+    func store(size: CGSize, cacheKey: String, item: Item) {
         itemCacheKeys[item] = cacheKey
+        cache[cacheKey] = size
     }
 
-    /// Removes cache for a single item. Other entries stay intact.
+    /// Drops item tracking. Cache entry stays if other items share the same cacheKey.
     func invalidate(item: Item) {
         itemCacheKeys.removeValue(forKey: item)
-        cache = cache.filter { $0.value.item != item }
     }
 
-    /// Rebuilds IndexPath keys after diffable apply without clearing valid entries.
-    func remapIndexPaths(_ mapping: [IndexPath: Item]) {
-        var newCache: [IndexPath: Entry] = [:]
-        newCache.reserveCapacity(mapping.count)
-
-        for (indexPath, item) in mapping {
-            if let existing = cache[indexPath], existing.item == item {
-                newCache[indexPath] = existing
-                continue
-            }
-
-            if let cacheKey = itemCacheKeys[item],
-               let entry = cache.values.first(where: { $0.item == item && $0.cacheKey == cacheKey }) {
-                newCache[indexPath] = Entry(size: entry.size, cacheKey: cacheKey, item: item)
-            }
-        }
-
-        cache = newCache
+    /// Removes a cached size when no item references it anymore.
+    func removeCacheKeyIfUnused(_ cacheKey: String) {
+        guard !itemCacheKeys.values.contains(cacheKey) else { return }
+        cache.removeValue(forKey: cacheKey)
     }
 
     func removeOrphanedItems(keeping keptItems: Set<Item>) {
         let orphaned = itemCacheKeys.keys.filter { !keptItems.contains($0) }
-        orphaned.forEach { invalidate(item: $0) }
+        orphaned.forEach { item in
+            let key = itemCacheKeys[item]
+            invalidate(item: item)
+            if let key {
+                removeCacheKeyIfUnused(key)
+            }
+        }
     }
 }
 
@@ -86,22 +68,19 @@ final class ListSizeCacheManager<Item: Hashable> {
 
 /// Bridges a cell to the coordinator's size cache without retaining the coordinator.
 struct ListSizingContext {
-    let indexPath: IndexPath
     let proposedWidth: CGFloat
     let cacheKey: String?
-    let readSize: (IndexPath) -> CGSize?
-    let readCachedKey: (IndexPath) -> String?
-    let writeSize: (CGSize, String, IndexPath) -> Void
+    let readSize: (String) -> CGSize?
+    let writeSize: (CGSize, String) -> Void
 
     func cachedSize() -> CGSize? {
         guard let cacheKey else { return nil }
-        guard readCachedKey(indexPath) == cacheKey else { return nil }
-        return readSize(indexPath)
+        return readSize(cacheKey)
     }
 
     func store(size: CGSize) {
         guard let cacheKey else { return }
-        writeSize(size, cacheKey, indexPath)
+        writeSize(size, cacheKey)
     }
 }
 
@@ -225,7 +204,7 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         lastSnapshot = snapshot
 
         dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            self?.remapSizeCache(for: snapshot)
+            self?.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
         }
     }
 
@@ -254,17 +233,13 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         let cacheKey = cacheKeyProvider?(item)
 
         sizingCell.sizingContext = ListSizingContext(
-            indexPath: indexPath,
             proposedWidth: max(width, 1),
             cacheKey: cacheKey,
-            readSize: { [weak self] path in
-                self?.sizeCache.size(for: path)
+            readSize: { [weak self] key in
+                self?.sizeCache.size(for: key)
             },
-            readCachedKey: { [weak self] path in
-                self?.sizeCache.cacheKey(for: path)
-            },
-            writeSize: { [weak self] size, key, path in
-                self?.sizeCache.store(size: size, cacheKey: key, item: item, at: path)
+            writeSize: { [weak self] size, key in
+                self?.sizeCache.store(size: size, cacheKey: key, item: item)
             }
         )
     }
@@ -278,7 +253,11 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         let newItems = Set(newSnapshot.itemIdentifiers)
 
         for item in oldSnapshot.itemIdentifiers where !newItems.contains(item) {
+            let oldKey = sizeCache.cacheKey(for: item)
             sizeCache.invalidate(item: item)
+            if let oldKey {
+                sizeCache.removeCacheKeyIfUnused(oldKey)
+            }
         }
 
         guard let cacheKeyProvider else { return }
@@ -290,22 +269,9 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
                let oldKey = sizeCache.cacheKey(for: item),
                oldKey != newKey {
                 sizeCache.invalidate(item: item)
+                sizeCache.removeCacheKeyIfUnused(oldKey)
             }
         }
-    }
-
-    private func remapSizeCache(for snapshot: NSDiffableDataSourceSnapshot<Section, Item>) {
-        var mapping: [IndexPath: Item] = [:]
-        mapping.reserveCapacity(snapshot.numberOfItems)
-
-        for (sectionIndex, section) in snapshot.sectionIdentifiers.enumerated() {
-            for (itemIndex, item) in snapshot.itemIdentifiers(inSection: section).enumerated() {
-                mapping[IndexPath(item: itemIndex, section: sectionIndex)] = item
-            }
-        }
-
-        sizeCache.remapIndexPaths(mapping)
-        sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
     }
 
     deinit {
