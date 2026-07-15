@@ -30,6 +30,8 @@
 		DE3691A42C6C526600113044 /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = DE3691A32C6C526600113044 /* .swiftlint.yml */; };
 		DE4319952C6CC45600FF57E1 /* Reachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4319942C6CC45600FF57E1 /* Reachability.swift */; };
 		DE7005C42C6A0E6000AFD096 /* HomeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7005C32C6A0E6000AFD096 /* HomeVc.swift */; };
+		LCV000012C700001000A0001 /* ListCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LCV000022C700001000A0002 /* ListCollectionView.swift */; };
+		CMT000012C700001000A0001 /* CommentListExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMT000022C700001000A0002 /* CommentListExample.swift */; };
 		DE7005C62C6A0E8700AFD096 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7005C52C6A0E8700AFD096 /* HomeViewModel.swift */; };
 		DE7005C82C6A10BC00AFD096 /* Application.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7005C72C6A10BC00AFD096 /* Application.swift */; };
 		DE7005CA2C6A1DA500AFD096 /* LoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7005C92C6A1DA500AFD096 /* LoginResponse.swift */; };
@@ -133,6 +135,8 @@
 		DE3691A32C6C526600113044 /* .swiftlint.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		DE4319942C6CC45600FF57E1 /* Reachability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reachability.swift; sourceTree = "<group>"; };
 		DE7005C32C6A0E6000AFD096 /* HomeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeVc.swift; sourceTree = "<group>"; };
+		LCV000022C700001000A0002 /* ListCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListCollectionView.swift; sourceTree = "<group>"; };
+		CMT000022C700001000A0002 /* CommentListExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentListExample.swift; sourceTree = "<group>"; };
 		DE7005C52C6A0E8700AFD096 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		DE7005C72C6A10BC00AFD096 /* Application.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
 		DE7005C92C6A1DA500AFD096 /* LoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginResponse.swift; sourceTree = "<group>"; };
@@ -332,20 +336,46 @@
 		DE32AA812C647DBD0098ED99 /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
+				LCV000032C700001000A0003 /* Components */,
 				DE7C5C262C65F53A00E31348 /* Storyboards */,
 				DE32AA822C647DDC0098ED99 /* Screens */,
 			);
 			path = Presentation;
 			sourceTree = "<group>";
 		};
+		LCV000032C700001000A0003 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				LCV000042C700001000A0004 /* ListCollectionView */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		LCV000042C700001000A0004 /* ListCollectionView */ = {
+			isa = PBXGroup;
+			children = (
+				LCV000022C700001000A0002 /* ListCollectionView.swift */,
+			);
+			path = ListCollectionView;
+			sourceTree = "<group>";
+		};
 		DE32AA822C647DDC0098ED99 /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				CMT000032C700001000A0003 /* Comment */,
 				DE7005C22C6A0E5100AFD096 /* Home */,
 				DE7A03342C69E9F80029E1D7 /* Login */,
 				DE7C5C272C65F80500E31348 /* Splash */,
 			);
 			path = Screens;
+			sourceTree = "<group>";
+		};
+		CMT000032C700001000A0003 /* Comment */ = {
+			isa = PBXGroup;
+			children = (
+				CMT000022C700001000A0002 /* CommentListExample.swift */,
+			);
+			path = Comment;
 			sourceTree = "<group>";
 		};
 		DE7005C22C6A0E5100AFD096 /* Home */ = {
@@ -857,6 +887,8 @@
 				DE7A03382C69EA180029E1D7 /* LoginVc.swift in Sources */,
 				DE29825D2C6F0141000A828A /* PostRepositoryProtocol.swift in Sources */,
 				DE7005C42C6A0E6000AFD096 /* HomeVc.swift in Sources */,
+				LCV000012C700001000A0001 /* ListCollectionView.swift in Sources */,
+				CMT000012C700001000A0001 /* CommentListExample.swift in Sources */,
 				DE7005CC2C6A1F0E00AFD096 /* AuthRepositoryProtocol.swift in Sources */,
 				DED1FF9F2C6D9A04006807AC /* Container.swift in Sources */,
 				DE7C5C132C65BF1A00E31348 /* ApiConnection.swift in Sources */,
