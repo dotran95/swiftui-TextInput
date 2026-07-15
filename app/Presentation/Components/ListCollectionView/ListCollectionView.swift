@@ -145,6 +145,29 @@ open class ListSizingCell: UICollectionViewCell {
     }
 }
 
+// MARK: - Scroll Target
+
+/// Request to scroll the list to a specific item.
+struct ListScrollTarget<Item: Hashable>: Equatable {
+    var item: Item
+    var position: UICollectionView.ScrollPosition = .bottom
+    var animated: Bool = true
+    /// Changes on each request so scrolling to the same item can be triggered again.
+    var id: UUID = UUID()
+
+    static func bottom(_ item: Item, animated: Bool = true) -> ListScrollTarget {
+        ListScrollTarget(item: item, position: .bottom, animated: animated)
+    }
+
+    static func top(_ item: Item, animated: Bool = true) -> ListScrollTarget {
+        ListScrollTarget(item: item, position: .top, animated: animated)
+    }
+
+    static func center(_ item: Item, animated: Bool = true) -> ListScrollTarget {
+        ListScrollTarget(item: item, position: .centeredVertically, animated: animated)
+    }
+}
+
 // MARK: - Delegate Callbacks
 
 struct ListCollectionViewCallbacks<Item: Hashable> {
@@ -197,6 +220,8 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
 
     private var callbacks = ListCollectionViewCallbacks<Item>()
     private var lastSnapshot: NSDiffableDataSourceSnapshot<Section, Item>?
+    private var pendingScrollTarget: ListScrollTarget<Item>?
+    private var lastHandledScrollID: UUID?
 
     init(
         cellProvider: @escaping CellProvider,
@@ -227,11 +252,34 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         lastSnapshot = snapshot
 
         dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            self?.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
+            guard let self else { return }
+            self.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
+            self.performPendingScrollIfNeeded()
         }
     }
 
+    func setScrollTarget(_ target: ListScrollTarget<Item>?) {
+        guard let target else { return }
+        guard target.id != lastHandledScrollID else { return }
+
+        pendingScrollTarget = target
+        performPendingScrollIfNeeded()
+    }
+
     // MARK: - Private
+
+    private func performPendingScrollIfNeeded() {
+        guard let target = pendingScrollTarget else { return }
+        guard let indexPath = dataSource.indexPath(for: target.item) else { return }
+
+        pendingScrollTarget = nil
+        lastHandledScrollID = target.id
+
+        collectionView.layoutIfNeeded()
+        collectionView.scrollToItem(at: indexPath, at: target.position, animated: target.animated)
+    }
+
+    // MARK: - Data Source
 
     private func makeDataSource() {
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(
@@ -364,6 +412,8 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
     var cellProvider: (UICollectionView, IndexPath, Item) -> UICollectionViewCell
     var callbacks: ListCollectionViewCallbacks<Item> = .init()
     var cacheKeyProvider: ((Item) -> String?)?
+    /// Set from SwiftUI to scroll to a specific item. Use a new `id` to re-trigger.
+    var scrollTarget: ListScrollTarget<Item>?
 
     func makeCoordinator() -> ListCollectionViewCoordinator<Section, Item> {
         ListCollectionViewCoordinator(
@@ -392,6 +442,7 @@ struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentabl
     func updateUIView(_ uiView: UICollectionView, context: Context) {
         context.coordinator.updateCallbacks(callbacks)
         context.coordinator.apply(snapshot: snapshot, animated: animated)
+        context.coordinator.setScrollTarget(scrollTarget)
     }
 }
 
@@ -407,7 +458,8 @@ extension ListCollectionView {
         layoutProvider: ((UICollectionView) -> UICollectionViewLayout)? = nil,
         cellRegistration: UICollectionView.CellRegistration<Cell, Item>,
         callbacks: ListCollectionViewCallbacks<Item> = .init(),
-        cacheKeyProvider: ((Item) -> String?)? = nil
+        cacheKeyProvider: ((Item) -> String?)? = nil,
+        scrollTarget: ListScrollTarget<Item>? = nil
     ) {
         self.snapshot = snapshot
         self.animated = animated
@@ -421,5 +473,6 @@ extension ListCollectionView {
         }
         self.callbacks = callbacks
         self.cacheKeyProvider = cacheKeyProvider
+        self.scrollTarget = scrollTarget
     }
 }

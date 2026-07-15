@@ -288,6 +288,7 @@ final class ChatListViewModel: ObservableObject {
 struct ChatListExampleView: View {
 
     @StateObject private var viewModel = ChatListViewModel()
+    @State private var scrollTarget: ListScrollTarget<MessageItem>?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -295,15 +296,31 @@ struct ChatListExampleView: View {
                 snapshot: viewModel.snapshot,
                 animated: true,
                 cellProvider: ChatListCellProvider.makeProvider(),
-                cacheKeyProvider: { $0.cacheKey }
+                cacheKeyProvider: { $0.cacheKey },
+                scrollTarget: scrollTarget
             )
 
             Divider()
 
-            Button("Add Message") {
-                viewModel.appendRandomMessage()
+            HStack(spacing: 12) {
+                Button("Scroll Top") {
+                    guard let first = viewModel.firstMessage else { return }
+                    scrollTarget = .top(first)
+                }
+
+                Button("Add Message") {
+                    viewModel.appendRandomMessage()
+                    if let last = viewModel.lastMessage {
+                        scrollTarget = .bottom(last)
+                    }
+                }
+
+                Button("Scroll Bottom") {
+                    guard let last = viewModel.lastMessage else { return }
+                    scrollTarget = .bottom(last)
+                }
             }
-            .font(.headline)
+            .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity)
             .padding()
         }
