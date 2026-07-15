@@ -40,6 +40,10 @@ enum CommentListSection: Hashable {
 
 final class CommentCell: ListSizingCell {
 
+    static let registration = UICollectionView.CellRegistration<CommentCell, CommentItem> { cell, _, item in
+        cell.configure(with: item)
+    }
+
     private let avatarView = UIView()
     private let authorLabel = UILabel()
     private let bodyLabel = UILabel()
@@ -196,12 +200,10 @@ struct CommentListExampleView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ListCollectionView<CommentListSection, CommentItem, CommentCell>(
+            ListCollectionView(
                 snapshot: viewModel.snapshot,
                 animated: true,
-                configureCell: { cell, _, item in
-                    cell.configure(with: item)
-                },
+                cellRegistration: CommentCell.registration,
                 callbacks: ListCollectionViewCallbacks(
                     didSelect: { item in
                         viewModel.toggleExpanded(for: item.id)

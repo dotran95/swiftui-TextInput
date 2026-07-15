@@ -182,37 +182,25 @@ enum ListCollectionViewLayoutFactory {
 
 // MARK: - Coordinator
 
-final class ListCollectionViewCoordinator<
-    Section: Hashable,
-    Item: Hashable,
-    Cell: ListSizingCell
->: NSObject {
+final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NSObject {
 
     typealias CellProvider = (UICollectionView, IndexPath, Item) -> UICollectionViewCell
-    typealias LayoutProvider = (UICollectionView) -> UICollectionViewLayout
 
-    private let cellProvider: CellProvider?
-    private let configureCell: ((Cell, IndexPath, Item) -> Void)?
-    private let layoutProvider: LayoutProvider?
+    private let cellProvider: CellProvider
     private let cacheKeyProvider: (Item) -> String?
 
     private(set) var collectionView: UICollectionView!
     private(set) var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let sizeCache = ListSizeCacheManager<Item>()
 
-    private var cellRegistration: UICollectionView.CellRegistration<Cell, Item>!
     private var callbacks = ListCollectionViewCallbacks<Item>()
     private var lastSnapshot: NSDiffableDataSourceSnapshot<Section, Item>?
 
     init(
-        cellProvider: CellProvider? = nil,
-        configureCell: ((Cell, IndexPath, Item) -> Void)? = nil,
-        layoutProvider: LayoutProvider?,
+        cellProvider: @escaping CellProvider,
         cacheKeyProvider: ((Item) -> String?)?
     ) {
         self.cellProvider = cellProvider
-        self.configureCell = configureCell
-        self.layoutProvider = layoutProvider
         self.cacheKeyProvider = cacheKeyProvider
         super.init()
     }
@@ -222,8 +210,6 @@ final class ListCollectionViewCoordinator<
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         collectionView.backgroundColor = .clear
-
-        makeCellRegistration()
         makeDataSource()
     }
 
@@ -245,33 +231,16 @@ final class ListCollectionViewCoordinator<
 
     // MARK: - Private
 
-    private func makeCellRegistration() {
-        cellRegistration = UICollectionView.CellRegistration<Cell, Item> { [weak self] cell, indexPath, item in
-            guard let self else { return }
-
-            if let configureCell = self.configureCell {
-                configureCell(cell, indexPath, item)
-            } else if let cellProvider = self.cellProvider {
-                let template = cellProvider(self.collectionView, indexPath, item)
-                if template !== cell {
-                    Self.migrateContent(from: template, to: cell)
-                }
-            }
-
-            self.attachSizing(to: cell, indexPath: indexPath, item: item)
-        }
-    }
-
     private func makeDataSource() {
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(
             collectionView: collectionView
         ) { [weak self] collectionView, indexPath, item in
             guard let self else { return UICollectionViewCell() }
-            return collectionView.dequeueConfiguredReusableCell(
-                using: self.cellRegistration,
-                for: indexPath,
-                item: item
-            )
+
+            // Caller owns CellRegistration(s) and dequeues the correct cell type.
+            let cell = self.cellProvider(collectionView, indexPath, item)
+            self.attachSizing(to: cell, indexPath: indexPath, item: item)
+            return cell
         }
     }
 
@@ -339,17 +308,6 @@ final class ListCollectionViewCoordinator<
         sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
     }
 
-    private static func migrateContent(from source: UICollectionViewCell, to destination: UICollectionViewCell) {
-        destination.contentConfiguration = source.contentConfiguration
-        destination.backgroundConfiguration = source.backgroundConfiguration
-
-        destination.contentView.subviews.forEach { $0.removeFromSuperview() }
-        source.contentView.subviews.forEach { subview in
-            subview.removeFromSuperview()
-            destination.contentView.addSubview(subview)
-        }
-    }
-
     deinit {
         collectionView?.delegate = nil
         collectionView?.prefetchDataSource = nil
@@ -412,25 +370,18 @@ extension ListCollectionViewCoordinator: UIScrollViewDelegate {
 
 // MARK: - SwiftUI Bridge
 
-struct ListCollectionView<
-    Section: Hashable,
-    Item: Hashable,
-    Cell: ListSizingCell
->: UIViewRepresentable {
+struct ListCollectionView<Section: Hashable, Item: Hashable>: UIViewRepresentable {
 
     var snapshot: NSDiffableDataSourceSnapshot<Section, Item>
     var animated: Bool = true
     var layoutProvider: ((UICollectionView) -> UICollectionViewLayout)?
-    var cellProvider: ((UICollectionView, IndexPath, Item) -> UICollectionViewCell)?
-    var configureCell: ((Cell, IndexPath, Item) -> Void)?
+    var cellProvider: (UICollectionView, IndexPath, Item) -> UICollectionViewCell
     var callbacks: ListCollectionViewCallbacks<Item> = .init()
     var cacheKeyProvider: ((Item) -> String?)?
 
-    func makeCoordinator() -> ListCollectionViewCoordinator<Section, Item, Cell> {
+    func makeCoordinator() -> ListCollectionViewCoordinator<Section, Item> {
         ListCollectionViewCoordinator(
             cellProvider: cellProvider,
-            configureCell: configureCell,
-            layoutProvider: layoutProvider,
             cacheKeyProvider: cacheKeyProvider
         )
     }
@@ -452,42 +403,30 @@ struct ListCollectionView<
     }
 }
 
-// MARK: - Convenience Initializers
+// MARK: - Single-Cell Convenience
 
 extension ListCollectionView {
 
-    /// Preferred for production — configures the dequeued reusable cell in place.
-    init(
+    /// Convenience for screens with a single cell type.
+    /// Configuration happens inside `UICollectionView.CellRegistration`.
+    init<Cell: ListSizingCell>(
         snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
         animated: Bool = true,
         layoutProvider: ((UICollectionView) -> UICollectionViewLayout)? = nil,
-        configureCell: @escaping (Cell, IndexPath, Item) -> Void,
+        cellRegistration: UICollectionView.CellRegistration<Cell, Item>,
         callbacks: ListCollectionViewCallbacks<Item> = .init(),
         cacheKeyProvider: ((Item) -> String?)? = nil
     ) {
         self.snapshot = snapshot
         self.animated = animated
         self.layoutProvider = layoutProvider
-        self.cellProvider = nil
-        self.configureCell = configureCell
-        self.callbacks = callbacks
-        self.cacheKeyProvider = cacheKeyProvider
-    }
-
-    /// Compatible with the requested API. Allocates a template cell per bind — use `configureCell` when possible.
-    init(
-        snapshot: NSDiffableDataSourceSnapshot<Section, Item>,
-        animated: Bool = true,
-        layoutProvider: ((UICollectionView) -> UICollectionViewLayout)? = nil,
-        cellProvider: @escaping (UICollectionView, IndexPath, Item) -> UICollectionViewCell,
-        callbacks: ListCollectionViewCallbacks<Item> = .init(),
-        cacheKeyProvider: ((Item) -> String?)? = nil
-    ) {
-        self.snapshot = snapshot
-        self.animated = animated
-        self.layoutProvider = layoutProvider
-        self.cellProvider = cellProvider
-        self.configureCell = nil
+        self.cellProvider = { collectionView, indexPath, item in
+            collectionView.dequeueConfiguredReusableCell(
+                using: cellRegistration,
+                for: indexPath,
+                item: item
+            )
+        }
         self.callbacks = callbacks
         self.cacheKeyProvider = cacheKeyProvider
     }
