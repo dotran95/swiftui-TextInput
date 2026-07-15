@@ -122,14 +122,11 @@ open class ListSizingCell: UICollectionViewCell {
     }
 
     /// Prefer layout-provided width; fall back to collection view bounds after layout pass.
-    private static func resolvedWidth(
-        layoutAttributes: UICollectionViewLayoutAttributes,
-        collectionView: UICollectionView?
-    ) -> CGFloat {
+    private func resolvedWidth(for layoutAttributes: UICollectionViewLayoutAttributes) -> CGFloat {
         let layoutWidth = layoutAttributes.size.width
         if layoutWidth > 1 { return layoutWidth }
 
-        guard let collectionView else { return layoutWidth }
+        guard let collectionView = enclosingCollectionView() else { return layoutWidth }
 
         let boundsWidth = collectionView.bounds.width
             - collectionView.adjustedContentInset.left
@@ -137,6 +134,17 @@ open class ListSizingCell: UICollectionViewCell {
         if boundsWidth > 1 { return boundsWidth }
 
         return layoutWidth
+    }
+
+    private func enclosingCollectionView() -> UICollectionView? {
+        var view: UIView? = self
+        while let current = view {
+            if let collectionView = current as? UICollectionView {
+                return collectionView
+            }
+            view = current.superview
+        }
+        return nil
     }
 
     open override func prepareForReuse() {
@@ -282,9 +290,11 @@ final class ListCollectionViewCoordinator<Section: Hashable, Item: Hashable>: NS
         invalidateChangedItems(between: lastSnapshot, and: snapshot)
         lastSnapshot = snapshot
         isApplyingSnapshot = true
+        applyGeneration += 1
+        let generation = applyGeneration
 
         dataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-            guard let self else { return }
+            guard let self, generation == self.applyGeneration else { return }
             self.isApplyingSnapshot = false
             self.sizeCache.removeOrphanedItems(keeping: Set(snapshot.itemIdentifiers))
             self.performPendingScrollIfNeeded()
