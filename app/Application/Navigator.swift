@@ -12,6 +12,8 @@ class Navigator {
         case splash
         case home
         case login
+        case comments
+        case chat
     }
 
     enum Transition {
@@ -58,6 +60,10 @@ class Navigator {
             return LoginDIContainer.makeViewController()
         case .splash:
             return SplashDIContainer.makeViewController()
+        case .comments:
+            return CommentListExampleViewController()
+        case .chat:
+            return ChatListExampleViewController()
         }
     }
 
