@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		000B318BAD872B643FFB2DCD /* Pods_app_appUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C446D6373EB6209021C25431 /* Pods_app_appUITests.framework */; };
+		C664AAA9CAD9B1486EE6D80B /* ImageCropCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6D53CDE7B9C75ADFAA4FD /* ImageCropCalculator.swift */; };
+		16A06A60CD8AA219C13D71CD /* UIImage+Crop.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D5EE46F35A23A88BBB787B /* UIImage+Crop.swift */; };
+		2DD7AF79631E05D45DC2FCA2 /* PhotoPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5098B9371C99CE2B50844D6D /* PhotoPicker.swift */; };
+		D7723AEE0DCC3B33CFA70997 /* ChatBackgroundImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 241CCABCDBF872FE3AE76ABA /* ChatBackgroundImagePreviewView.swift */; };
+		9688F07554C7D77DCDC794EA /* ChatBackgroundPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093FB04E8CBDF66C869B8C56 /* ChatBackgroundPickerView.swift */; };
+		7798E0E7A9D2F6483703DC32 /* ChatBackgroundHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4E115C7A4384554F4783F7 /* ChatBackgroundHostingController.swift */; };
 		1C8B100C2C4FD59900DF6C75 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8B100B2C4FD59900DF6C75 /* AppDelegate.swift */; };
 		1C8B100E2C4FD59900DF6C75 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8B100D2C4FD59900DF6C75 /* SceneDelegate.swift */; };
 		1C8B10132C4FD59900DF6C75 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1C8B10112C4FD59900DF6C75 /* Main.storyboard */; };
@@ -142,6 +148,12 @@
 		DE7005D62C6B01BB00AFD096 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		DE7A03352C69EA050029E1D7 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		DE7A03372C69EA180029E1D7 /* LoginVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginVc.swift; sourceTree = "<group>"; };
+		69C6D53CDE7B9C75ADFAA4FD /* ImageCropCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCropCalculator.swift; sourceTree = "<group>"; };
+		C5D5EE46F35A23A88BBB787B /* UIImage+Crop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Crop.swift"; sourceTree = "<group>"; };
+		5098B9371C99CE2B50844D6D /* PhotoPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPicker.swift; sourceTree = "<group>"; };
+		241CCABCDBF872FE3AE76ABA /* ChatBackgroundImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBackgroundImagePreviewView.swift; sourceTree = "<group>"; };
+		093FB04E8CBDF66C869B8C56 /* ChatBackgroundPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBackgroundPickerView.swift; sourceTree = "<group>"; };
+		FA4E115C7A4384554F4783F7 /* ChatBackgroundHostingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBackgroundHostingController.swift; sourceTree = "<group>"; };
 		DE7A4FDE2C6DB25000A97D40 /* LoginDIContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginDIContainer.swift; sourceTree = "<group>"; };
 		DE7A4FE02C6DB39100A97D40 /* HomeDIContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDIContainer.swift; sourceTree = "<group>"; };
 		DE7A4FE22C6DB50A00A97D40 /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
@@ -344,8 +356,22 @@
 				DE7005C22C6A0E5100AFD096 /* Home */,
 				DE7A03342C69E9F80029E1D7 /* Login */,
 				DE7C5C272C65F80500E31348 /* Splash */,
+				4512701A1679AC7712B9664C /* ChatBackground */,
 			);
 			path = Screens;
+			sourceTree = "<group>";
+		};
+		4512701A1679AC7712B9664C /* ChatBackground */ = {
+			isa = PBXGroup;
+			children = (
+				093FB04E8CBDF66C869B8C56 /* ChatBackgroundPickerView.swift */,
+				241CCABCDBF872FE3AE76ABA /* ChatBackgroundImagePreviewView.swift */,
+				FA4E115C7A4384554F4783F7 /* ChatBackgroundHostingController.swift */,
+				5098B9371C99CE2B50844D6D /* PhotoPicker.swift */,
+				69C6D53CDE7B9C75ADFAA4FD /* ImageCropCalculator.swift */,
+				C5D5EE46F35A23A88BBB787B /* UIImage+Crop.swift */,
+			);
+			path = ChatBackground;
 			sourceTree = "<group>";
 		};
 		DE7005C22C6A0E5100AFD096 /* Home */ = {
@@ -876,6 +902,12 @@
 				DE7D6AF92C6B6D180058A42B /* ActivityIndicator.swift in Sources */,
 				1C8B100E2C4FD59900DF6C75 /* SceneDelegate.swift in Sources */,
 				DE7C5C2C2C6620E200E31348 /* ViewModelType.swift in Sources */,
+				C664AAA9CAD9B1486EE6D80B /* ImageCropCalculator.swift in Sources */,
+				16A06A60CD8AA219C13D71CD /* UIImage+Crop.swift in Sources */,
+				2DD7AF79631E05D45DC2FCA2 /* PhotoPicker.swift in Sources */,
+				D7723AEE0DCC3B33CFA70997 /* ChatBackgroundImagePreviewView.swift in Sources */,
+				9688F07554C7D77DCDC794EA /* ChatBackgroundPickerView.swift in Sources */,
+				7798E0E7A9D2F6483703DC32 /* ChatBackgroundHostingController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
